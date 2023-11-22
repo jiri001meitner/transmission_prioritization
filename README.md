@@ -26,3 +26,7 @@ Zatím funguje jen transmission_prioritizace_simple.py
 	".exe"
 	]
 	}
+
+### Největší užitek přináší použití v crontabu
+	*/1 * * * * ${HOME}/github/transmission_prioritization/transmission_prioritizace_simple.py
+
