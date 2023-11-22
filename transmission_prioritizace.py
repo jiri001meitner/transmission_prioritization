@@ -5,10 +5,12 @@ Modul pro správu a výpis informací o torrentech získaných z Transmission.
 
 import json
 import os
+import threading
 import transmissionrpc
 
+
 # Načtení přihlašovacích údajů
-with open(os.path.expanduser("~/.config/transmission/pass.json"), 
+with open(os.path.expanduser("~/.config/transmission/pass.json"),
           "r", encoding="utf-8") as file:
     credentials = json.load(file)
 
@@ -16,12 +18,12 @@ username = credentials["username"]
 password = credentials["password"]
 
 # Načtení nechtěných přípon souborů
-with open(os.path.expanduser("~/.config/transmission/unwanted.json"), 
+with open(os.path.expanduser("~/.config/transmission/unwanted.json"),
           "r", encoding="utf-8") as file:
     unwanted = json.load(file)["unwanted"]
 
 # Připojení k Transmission RPC
-client = transmissionrpc.Client('localhost', port=9091, 
+client = transmissionrpc.Client('localhost', port=9091,
                                 user=username, password=password)
 
 torrents_info = {}
@@ -109,7 +111,7 @@ fronta_zvysit = []
 
 def logika_snizeni_priority():
     """
-    Logika pro snížení priority souborů v torrentech.
+    Logika snížení priority
     """
     for tr_id, info in torrents_info.items():
         if info['bandwidthPriority'] == -1:
@@ -117,15 +119,11 @@ def logika_snizeni_priority():
                 file_info['fronta'] = 'preskoceno_snizit'
             continue
 
-        if info['progress'] == 100.0 and info['bandwidthPriority'] in [0, 1]:
-            for file_info in info['soubory'].values():
-                file_info['fronta'] = 'snizit'
-            continue
-
         for file_info in info['soubory'].values():
             if file_info['fronta'] == 'nezpracovano':
                 if file_info['priority'] == 'low':
                     file_info['fronta'] = 'preskoceno_snizit'
+                    print(f"Přeskakuji soubor s nízkou prioritou: {file_info['name']}")
                     continue
 
                 if not file_info['selected']:
@@ -163,11 +161,11 @@ def logika_zvyseni_priority():
         if info['progress'] == 100.0:
             continue
 
-        soubory_ke_zpracovani = [file for file in info['soubory'].values() 
-                                 if file['fronta'] == 'preskoceno_snizit' 
+        soubory_ke_zpracovani = [file for file in info['soubory'].values()
+                                 if file['fronta'] == 'preskoceno_snizit'
                                  and file['completed'] / file['size'] < 1]
         if soubory_ke_zpracovani:
-            nejvetsi_pomer_stazeni_soubor = max(soubory_ke_zpracovani, 
+            nejvetsi_pomer_stazeni_soubor = max(soubory_ke_zpracovani,
                                                 key=lambda file: file['completed'] / file['size'])
             nejvetsi_pomer_stazeni_soubor['fronta'] = 'zvysit'
 
@@ -180,6 +178,15 @@ def pridani_do_fronty_zvysit():
             if file_info['fronta'] == 'zvysit':
                 fronta_zvysit.append((tr_id, file_info['name']))
 
+def zadost():
+    """
+    zadost o více peerů
+    """
+    for tr_id, info in torrents_info.items():
+        if info['isFinished'] == False:
+#            print(f"Požaduji více peerů: Torrent ID {tr_id}")
+            client.reannounce([tr_id])
+
 # Volání funkcí
 logika_snizeni_priority()
 pridani_do_fronty_snizit()
@@ -189,11 +196,55 @@ pridani_do_fronty_zvysit()
 # Výpis informací o torrentech
 vypsat_torrent_info()
 
-# Výpis front
-print("Fronta snížit prioritu:")
-for tr_id, fname in fronta_snizit:
-    print(f"  Torrent ID: {tr_id}, Soubor: {fname}")
+## Výpis front ##
+# print("Fronta snížit prioritu:")
+# for tr_id, fname in fronta_snizit:
+#    print(f"  Torrent ID: {tr_id}, Soubor: {fname}")
 
-print("\nFronta zvýšit prioritu:")
+# print("Fronta zvýšit prioritu:")
+# for tr_id, fname in fronta_zvysit:
+#     print(f"  Torrent ID: {tr_id}, Soubor: {fname}")
+
+# Změna spuštění front, paralelně vše co je ve frontě snížit a
+# po doběhnutí paralelně vše co je ve frontě zvýšit
+def zmenit_prioritu(tr_id, fname, chceme_zvysit):
+    """
+    Zpracování front
+    """
+
+    if chceme_zvysit:
+        client.change_torrent(tr_id, files_wanted=[fname])
+        print(f"Zvýšena priorita: Torrent ID {tr_id}, Soubor: {fname}")
+    else:
+        client.change_torrent(tr_id, files_unwanted=[fname])
+        print(f"Snížena priorita: Torrent ID {tr_id}, Soubor: {fname}")
+
+    # Aktualizace stavu zpracovano ve slovníku
+    for torrent_info in torrents_info.values():
+        if fname in torrent_info['soubory']:
+            torrent_info['soubory'][fname]['zpracovano'] = True
+
+# Inicializace a spuštění vláken pro snížení priority
+threads_snizit = []
+for tr_id, fname in fronta_snizit:
+    t = threading.Thread(target=zmenit_prioritu, args=(tr_id, fname, False))
+    threads_snizit.append(t)
+    t.start()
+
+# Čekání na dokončení vláken pro snížení priority
+for t in threads_snizit:
+    t.join()
+
+# Inicializace a spuštění vláken pro zvýšení priority
+threads_zvysit = []
 for tr_id, fname in fronta_zvysit:
-    print(f"  Torrent ID: {tr_id}, Soubor: {fname}")
+    t = threading.Thread(target=zmenit_prioritu, args=(tr_id, fname, True))
+    threads_zvysit.append(t)
+    t.start()
+
+# Čekání na dokončení vláken pro zvýšení priority
+for t in threads_zvysit:
+    t.join()
+
+# Požádání o více protějšků:
+zadost()
