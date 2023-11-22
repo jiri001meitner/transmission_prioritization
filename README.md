@@ -8,6 +8,8 @@ adjusting priorities for transmission via python and transmissionrpc
 * soubor s credentials pro transmission v umístění: /.config/transmission/pass.json
 * soubor s příponami nechtěných souborů ~/.config/transmission/unwanted.json
 
+## zatím funguje jen transmission_prioritizace_simple.py
+Zatím funguje jen transmission_prioritizace_simple.py
 
 ### formát souboru ~/.config/transmission/pass.json
 	{
