@@ -5,8 +5,11 @@ adjusting priorities for transmission via python and transmissionrpc
 * nainstalované transmission
 * povolená vzdálená správa na localhostu
 * ověření jménem a heslem
-* soubor s credentials pro transmission v umístění: /.config/transmission/pass.json
-* soubor s příponami nechtěných souborů ~/.config/transmission/unwanted.json
+
+## instalace
+	mkdir ~/github -p
+	git clone https://github.com/jiri001meitner/transmission_prioritization ~/github/transmission_prioritization
+	~/github/transmission_prioritization/install.sh
 
 ## zatím funguje jen transmission_prioritizace_simple.py
 Zatím funguje jen transmission_prioritizace_simple.py
