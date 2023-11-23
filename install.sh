@@ -92,7 +92,7 @@ paste <(printf '5 1 * * *') <(realpath ~/bin/transmission_blocklist.py) -d ' '
 }
 if ! crontab -l|grep -q 'transmission_prioritizace.py\|transmission_blocklist.py'; then
    (crontab -l 2>/dev/null; add_cronjob) | crontab -
-   "echo blocklist installed"; else echo "blocklist already installed"
+   "echo crontab installed"; else echo "crontab already installed"
 fi
 
 exit
