@@ -1,0 +1,50 @@
+#!/bin/bash
+magnet=$(mktemp)
+magnet_tmp=$(mktemp)
+if [[ -z ${*} ]]; then
+nano "${magnet}"; else
+echo "${*}">"${magnet}"
+fi
+if ! (pgrep -f 'transmission'|grep -q .); then
+     (transmission-gtk --minimized &>/dev/null </dev/null &)
+fi
+
+tr '=' '\n' <"${magnet}"|sed 's/ /%20/g'|sed 's@%3A80%2F@/@g'|sed 's@%3A%2F%2F@://@g'|sed 's@%3A@:@g'|sed 's/&tr//g'|grep 'http\|udp'|while read -r tracker; do
+http_status=$(curl -X POST "https://newtrackon.com/api/add" --compressed \
+ -H "Content-Type: application/x-www-form-urlencoded" \
+ -d "new_trackers=${tracker}" -v|& grep '< HTTP/2'|awk '{print $3}')
+case ${http_status} in
+    204)
+        echo "${tracker} přidán do fronty"
+        ;;
+    400)
+        echo "${tracker} žádný tracker nezpracován"
+        ;;
+    413)
+        echo "${tracker} vloženo příliš mnoho trackerů"
+        ;;
+    *)
+        # Tato část se provede, pokud ${http_status} neodpovídá žádné z výše uvedených hodnot
+        echo "Neznámý http_status: ${http_status}"
+        ;;
+esac
+done &>/dev/null
+
+trackers=$(curl -Ls -- https://newtrackon.com/api/stable?include_ipv6_only_trackers=1|grep .)
+trackers_count="$(echo "${trackers}"|wc -l)"
+paste <(tr -s ' \t\r\n' '_' <"${magnet}"|tr -s '.' '.') <(yes '&tr='|head -n"${trackers_count}") <(echo "${trackers}")|tr -d '\t\n'|sed 's@%3A%2F%2F@://@g'|sed 's@%3A@:@g'|sed 's@%2F@/@g'>"${magnet_tmp}"
+mv "${magnet_tmp}" "${magnet}"
+
+#printf '# trackery:\n\n'
+# for line in $(cat ${magnet}|tr '&' '\n'|grep 'tr'|cut -f2 -d=|uniq); do printf "${line}\n\n"; done
+#printf '\n\n-----------------------'
+
+# printf '# magnet:\n\n'
+transmission_add_magnet.py "$(<"${magnet}")"
+transmission_prioritizace.py
+(sleep 10; transmission_prioritizace.py) &>/dev/null &
+# printf '\n\n-----------------------'
+
+rm -rf "${magnet}"
+
+exit
