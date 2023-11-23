@@ -72,12 +72,14 @@ chmod 0700 "${HOME}/.local/share/applications/magnet.desktop"
 # vytváření symlinků
 mkdir ~/bin -p
 transmission_add_magnet="$(realpath ./transmission_add_magnet.py)"
-transmission_prioritizace="$(realpath ./transmission_prioritizace_simple.py)"
+transmission_prioritizace_py="$(realpath ./transmission_prioritizace_simple.py)"
+transmission_prioritizace="$(realpath ./transmission_prioritizace)"
 magnet="$(realpath ./magnet)"
 blocklist="$(realpath ./transmission_blocklist.py)"
 
 ln -svTf "${transmission_add_magnet}" ~/bin/transmission_add_magnet.py
-ln -svTf "${transmission_prioritizace}" ~/bin/transmission_prioritizace.py
+ln -svTf "${transmission_prioritizace_py}" ~/bin/transmission_prioritizace.py
+ln -svTf "${transmission_prioritizace}" ~/bin/transmission_prioritizace
 ln -svTf "${magnet}" ~/bin/magnet
 ln -svTf "${blocklist}" ~/bin/transmission_blocklist.py
 

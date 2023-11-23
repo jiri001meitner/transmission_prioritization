@@ -1,0 +1,6 @@
+#!/bin/bash
+if ! (pgrep -f 'transmission'|grep -q .); then
+     (transmission-gtk --minimized &>/dev/null </dev/null &)
+fi
+"${HOME}/bin/transmission_prioritizace.py"
+exit
