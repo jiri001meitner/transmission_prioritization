@@ -1,4 +1,5 @@
 #!/bin/bash
+source "${HOME}/PythonEnvs/transmissionrpc-env/bin/activate"
 magnet=$(mktemp)
 magnet_tmp=$(mktemp)
 if [[ -z ${*} ]]; then
@@ -6,7 +7,7 @@ nano "${magnet}"; else
 echo "${*}">"${magnet}"
 fi
 if ! (pgrep -f 'transmission'|grep -q .); then
-     (transmission-gtk --minimized &>/dev/null </dev/null &)
+     (transmission-qt --minimized &>/dev/null </dev/null &)
 fi
 
 tr '=' '\n' <"${magnet}"|sed 's/ /%20/g'|sed 's@%3A80%2F@/@g'|sed 's@%3A%2F%2F@://@g'|sed 's@%3A@:@g'|sed 's/&tr//g'|grep 'http\|udp'|while read -r tracker; do
@@ -46,5 +47,5 @@ transmission_prioritizace.py
 # printf '\n\n-----------------------'
 
 rm -rf "${magnet}"
-
+deactivate
 exit

@@ -2,5 +2,5 @@
 if ! (pgrep -f 'transmission'|grep -q .); then
      (transmission-gtk --minimized &>/dev/null </dev/null &)
 fi
-"${HOME}/bin/transmission_prioritizace.py"
+"${HOME}/PythonEnvs/transmissionrpc-env/bin/python" "${HOME}/bin/transmission_prioritizace.py"
 exit

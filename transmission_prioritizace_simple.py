@@ -20,7 +20,8 @@ with open(os.path.expanduser("~/.config/transmission/unwanted.json"),
     unwanted = json.load(file)["unwanted"]
 
 try:
-    tc = transmissionrpc.Client('localhost', port=9091, user=username, password=password)
+    #tc = transmissionrpc.Client('localhost', port=9091, user=username, password=password)
+    tc = transmissionrpc.Client('127.0.0.1', port=9091, user=username, password=password, timeout=30)
 
     torrents = tc.get_torrents(arguments=['id', 'status', 'peersConnected', 'name'])
     for torrent in torrents:

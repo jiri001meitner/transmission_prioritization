@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/medved/PythonEnvs/transmissionrpc-env/bin/python3
 """
 Předá magnet link transmission, je využíváno shellovým scriptem magnet
 """
@@ -27,7 +27,7 @@ password = credentials["password"]
 
 # připojit se k Transmission
 try:
-    tc = transmissionrpc.Client('localhost', port=9091, user=username, password=password)
+    tc = transmissionrpc.Client('127.0.0.1', port=9091, user=username, password=password, timeout=30)
 
     # přidat magnet link
     torrent = tc.add_torrent(magnet_link)
